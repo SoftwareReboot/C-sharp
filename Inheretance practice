@@ -1,0 +1,209 @@
+using System;
+using inheretance_prac;
+
+
+namespace inheretance_prac
+{
+    public class Flight
+    {
+        private string flightNumber;
+        private string destination;
+        private double baseFare;
+
+        public string FlightNumber
+        {
+            get { return flightNumber; }
+            set { flightNumber = value; }
+        }
+
+        public string Destination
+        {
+            get { return destination; }
+            set { destination = value; }
+        }
+
+        public double BaseFare
+        {
+            get { return baseFare; }
+            set
+            {
+                if (value > 0)
+                    baseFare = value;
+                else
+                    throw new ArgumentException("Base fare must be greater than zero.");
+            }
+        }
+
+        public Flight(string flightNumber, string destination, double baseFare)
+        {
+            FlightNumber = flightNumber;
+            Destination = destination;
+            BaseFare = baseFare;
+        }
+
+        public virtual void DisplayDetails()
+        {
+            Console.WriteLine("------Flight Details------");
+            Console.WriteLine($"Flight Number: {FlightNumber}");
+            Console.WriteLine($"Destination: {Destination}");
+            Console.WriteLine($"Base Fare: {BaseFare:C}");
+        }
+
+        public virtual double CalculateFare()
+        {
+            return BaseFare;
+        }
+
+    }
+
+    public class DomesticFlight : Flight
+    {
+        public DomesticFlight(string flightNumber, string destination, double baseFare)
+            : base(flightNumber, destination, baseFare) { }
+
+        public override void DisplayDetails()
+        {
+            base.DisplayDetails();
+            Console.WriteLine(" Flight Type: Domestic");
+        }
+
+        public override double CalculateFare()
+        {
+            return BaseFare + (BaseFare * 0.05);
+        }
+    }
+
+    public class InternationalFlight : Flight
+    {
+        private string passportNum;
+
+        public string PassportNum
+        {
+            get { return passportNum; }
+            set
+            {
+                if (!string.IsNullOrEmpty(value))
+                    passportNum = value;
+                else
+                    throw new ArgumentException(" Passport Number Must Not be Empty !");
+            }
+        }
+        public InternationalFlight(string flightNumber, string destination, double baseFare, String passportNum)
+            : base(flightNumber, destination, baseFare) 
+        {
+            PassportNum = passportNum;
+        }
+            
+        public override void DisplayDetails()
+        {
+            base.DisplayDetails();
+            Console.WriteLine(" Flight Type: International");
+            Console.WriteLine($"Password Required: yes (Passport Number: {passportNum})");
+        }
+    }
+}
+
+class program
+{
+    static void Main(string[] args)
+    {
+        bool continueProgram = true;
+
+        do
+        {
+            Console.Clear();
+            Console.WriteLine(" Welcome to the Flight Reservation System");
+            Console.WriteLine("-----------------------------------------");
+            Console.WriteLine("[1] Create Reservation for Domestic Flight");
+            Console.WriteLine("[2] Create Reservation for International Flight");
+            Console.WriteLine("[3] to Exit");
+            Console.Write(" Please Select an Option (1-3): ");
+
+            string choice = Console.ReadLine();
+
+            switch (choice)
+            {
+                case "1":
+                    CreateDomesticFlight();
+                    break;
+                case "2":
+                    CreateInternationalFlight();
+                    break;
+                case "3":
+                    continueProgram = false;
+                    break;
+                default:
+                    Console.WriteLine(" Invalid Choice. Please try again !");
+                    break;
+            }
+            if (continueProgram)
+            {
+                Console.WriteLine("\nPress Enter to return to main menu....");
+                Console.ReadLine();
+            }
+        } while (continueProgram);   
+    }
+
+    static void CreateDomesticFlight()
+    {
+        Console.Clear();
+        Console.WriteLine("Creating Domestic Flight");
+
+        Console.Write("Enter Flight Number: ");
+        string flightNumber = Console.ReadLine();
+
+        Console.Write("Enter Destination: ");
+        string destination = Console.ReadLine();
+
+        double baseFare = 0;
+        do
+        {
+            Console.Write("Enter Base Fare: ");
+            if (double.TryParse(Console.ReadLine(), out baseFare) && baseFare > 0)
+            {
+                break;
+            }
+            else
+            {
+                Console.WriteLine("Invalid input. Please enter a positive number for the base fare.");
+            }
+        } while (baseFare <= 0); // Repeat until valid baseFare is entered
+
+        DomesticFlight domesticFlight = new DomesticFlight(flightNumber, destination, baseFare);
+        domesticFlight.DisplayDetails();
+    }
+
+    static void CreateInternationalFlight()
+    {
+        Console.Clear();
+        Console.WriteLine("Creating International Flight");
+
+        Console.Write("Enter Flight Number: ");
+        string flightNumber = Console.ReadLine();
+
+
+        Console.Write("Enter Destination: ");
+        string destination = Console.ReadLine();
+
+        double baseFare = 0;
+        do
+        {
+            Console.Write("Enter Base Fare: ");
+            if (double.TryParse(Console.ReadLine(), out baseFare) && baseFare > 0)
+            {
+                break;
+            }
+            else
+            {
+                Console.WriteLine("Invalid input. Please enter a positive number for the base fare.");
+            }
+        } while (baseFare <= 0); // Repeat until valid baseFare is entered
+
+        Console.Write("Enter Passport Number: ");
+        string passportNum = Console.ReadLine();
+
+        InternationalFlight internationalFlight = new InternationalFlight(flightNumber, destination, baseFare, passportNum);
+        internationalFlight.DisplayDetails();
+    }
+}
+
