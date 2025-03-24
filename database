@@ -1,0 +1,110 @@
+-- Create database if it doesn't exist
+IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'storeDB')
+    CREATE DATABASE storeDB;
+GO
+
+USE storeDB;
+GO
+
+-- Create the 'category' table if it doesn't exist
+IF OBJECT_ID('category', 'U') IS NULL
+BEGIN
+    CREATE TABLE category (
+        category_id INT IDENTITY(1,1) PRIMARY KEY,
+        category_name VARCHAR(50) NOT NULL
+    );
+END
+
+-- Create the 'Product' table if it doesn't exist
+IF OBJECT_ID('Product', 'U') IS NULL
+BEGIN
+    CREATE TABLE Product (
+        product_id INT IDENTITY(1,1) PRIMARY KEY,
+        name VARCHAR(50) NOT NULL,
+        price DECIMAL(10,2) NOT NULL,
+        unit VARCHAR(50) NOT NULL,
+        stocks INT DEFAULT 0 CHECK(stocks >= 0),
+        category_id INT NOT NULL,
+        FOREIGN KEY (category_id) REFERENCES category(category_id)
+    );
+END
+
+-- Insert categories (if not exists)
+INSERT INTO category(category_name)
+SELECT name FROM (VALUES ('Vegetables'), ('Meats'), ('Fruits'), ('Drinks'), ('Liquor')) AS C(name)
+WHERE NOT EXISTS (SELECT 1 FROM category WHERE category_name = C.name);
+
+-- Insert products (if not exists)
+INSERT INTO Product(name, price, unit,stocks,category_id)
+SELECT name, price, unit, stocks,category_id FROM 
+(VALUES 
+    
+    --Vegetables
+    ('Tomato', 10.00, 'per piece', 100, 1),
+    ('Kamunggay', 10.00, 'per bundle', 50, 1),
+    ('Onion', 10.00, 'per piece', 200, 1),
+    ('Garlic', 10.00, 'per piece', 150, 1),
+    ('Ginger', 20.00, 'per 10 grams', 75, 1),
+    ('Lettuce', 100.00, 'per 250 grams', 60, 1),
+    ('Carrot', 20.00, 'per 250 grams', 90, 1),
+    ('Bell Pepper', 199.00, 'per 250 grams', 40, 1),
+    ('Squash', 99.00, 'per Kilo', 30, 1),
+    ('Eggplant', 75.00, 'per Kilo', 25, 1),
+    ('Potato', 80.00, 'per Kilo', 70, 1),
+    ('Green Onion', 50.00, 'per 100 grams', 80, 1)
+
+    --Meats
+
+
+    
+) AS P(name, price, unit,stocks, category_id)
+WHERE NOT EXISTS (SELECT 1 FROM Product WHERE name = P.name);
+
+-- Display products with category descriptions
+SELECT 
+    P.product_id,
+    P.name AS product_name,
+    P.price,
+    P.unit,
+    P.stocks,
+    C.category_name AS category_description
+FROM Product P
+JOIN category C ON P.category_id = C.category_id;
+
+-- Create 'ORDERS' table if it doesn't exist
+IF OBJECT_ID('ORDERS', 'U') IS NULL
+BEGIN
+    CREATE TABLE ORDERS(
+        order_id INT IDENTITY(1,1) PRIMARY KEY,
+        order_date DATETIME DEFAULT GETDATE(),
+        subtotal DECIMAL(10,2) NOT NULL,
+        discount DECIMAL(10,2) DEFAULT 0,
+        total DECIMAL(10,2) NOT NULL
+    );
+END
+
+-- Create 'Order_Items' table if it doesn't exist
+IF OBJECT_ID('Order_Items', 'U') IS NULL
+BEGIN
+    CREATE TABLE Order_Items(
+        order_item_id INT IDENTITY(1,1) PRIMARY KEY,
+        order_id INT NOT NULL,
+        product_id INT NOT NULL,
+        quantity INT NOT NULL,
+        price DECIMAL(10,2) NOT NULL,
+        FOREIGN KEY (order_id) REFERENCES ORDERS(order_id),
+        FOREIGN KEY (product_id) REFERENCES Product(product_id)
+    );
+END
+
+IF OBJECT_ID('Users', 'U')IS NULL
+BEGIN
+    CREATE TABLE Users(
+        user_id INT PRIMARY KEY IDENTITY(1,1),
+        username NVARCHAR(50) UNIQUE NOT NULL,
+        password NVARCHAR(255) NOT NULL
+    );
+END
+
+
+SELECT * FROM Users;
