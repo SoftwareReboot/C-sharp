@@ -1,0 +1,154 @@
+using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Linq;
+using System.Windows.Forms;
+using GroceryPOS.Components;
+
+namespace GroceryPOS
+{
+    public partial class MainFrame : Form
+    {
+        readonly List<ProductCard> products = new List<ProductCard>();
+        readonly List<ProductInCart> cartItems;
+        readonly string connectionString = "Data Source=DESKTOP-1VJ4VQK;Initial Catalog=storeDB;Integrated Security=True";
+
+        public MainFrame()
+        {
+            InitializeComponent();
+            cartItems = new List<ProductInCart>();
+            LoadProductsFromDatabase();
+        }
+
+        private void LoadProductsFromDatabase()
+        {
+            try
+            {
+                using (SqlConnection conn = new SqlConnection(connectionString))
+                {
+                    conn.Open();
+                    string query = "SELECT P.product_id, P.name, P.price, P.unit, C.category_name " +
+                                   "FROM Product P JOIN category C ON P.category_id = C.category_id";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            ProductCard product = new ProductCard
+                            {
+                                ProducTitle = reader["name"].ToString(),
+                                ProductPrice = Convert.ToDouble(reader["price"]),
+                                Category = reader["category_name"].ToString()
+                            };
+
+                            products.Add(product);
+                            flowLayoutPanel1.Controls.Add(product);
+                            product.Click += ClickHandler;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading products: " + ex.Message);
+            }
+        }
+
+        private void ClickHandler(object sender, EventArgs e)
+        {
+            if (sender is ProductCard productCard)
+            {
+                var existingItem = cartItems.FirstOrDefault(item => item.Title == productCard.ProducTitle);
+                if (existingItem != null)
+                {
+                    existingItem.Quantity++;
+                }
+                else
+                {
+                    ProductInCart cartItem = new ProductInCart(this)
+                    {
+                        Title = productCard.ProducTitle,
+                        Price = productCard.ProductPrice,
+                        Quantity = 1
+                    };
+
+                    cartItems.Add(cartItem);
+                    flowLayoutPanel2.Controls.Add(cartItem);
+                }
+
+                UpdateCartUI();
+            }
+        }
+
+        private void UpdateCartUI()
+        {
+            flowLayoutPanel2.Controls.Clear();
+
+            var itemsToRemove = new List<ProductInCart>();
+
+            for (int i = cartItems.Count - 1; i >= 0; i--)
+            {
+                if (cartItems[i].Quantity == 0)
+                {
+                    itemsToRemove.Add(cartItems[i]);
+                    continue;
+                }
+                flowLayoutPanel2.Controls.Add(cartItems[i]);
+            }
+
+            foreach (var item in itemsToRemove)
+            {
+                cartItems.Remove(item);
+            }
+
+            UpdateSummary();
+        }
+
+        public void UpdateSummary()
+        {
+            double subtotal = CalculateSubtotal();
+            int discountP = DetermineDiscountP(subtotal);
+            double discount = CalculateDiscount(subtotal, discountP);
+            double total = CalculateTotal(subtotal, discount);
+
+            subtotalLabel.Text = "₱ " + subtotal.ToString("N2");
+            discountpLabel.Text = $"{discountP}%";
+            discountLabel.Text = "₱ " + discount.ToString("N2");
+            totalLabel.Text = "₱ " + total.ToString("N2");
+        }
+
+        private double CalculateSubtotal()
+        {
+            double subtotal = 0;
+            foreach (var item in cartItems)
+            {
+                subtotal += item.Price * item.Quantity;
+            }
+            return subtotal;
+        }
+
+        private int DetermineDiscountP(double subtotal)
+        {
+            if (subtotal >= 500) return 20;
+            else if (subtotal >= 200) return 15;
+            else if (subtotal >= 100) return 10;
+            else return 0;
+        }
+
+        private double CalculateDiscount(double subtotal, int discountP)
+        {
+            return subtotal * discountP / 100;
+        }
+
+        private double CalculateTotal(double subtotal, double discount)
+        {
+            return subtotal - discount;
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+    }
+}
