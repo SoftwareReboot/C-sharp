@@ -1,4 +1,4 @@
--- Create database if it doesn't exist
+-- Create the database
 IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'protoDB')
     CREATE DATABASE protoDB;
 GO
@@ -6,6 +6,12 @@ GO
 USE protoDB;
 GO
 
+-- Drop tables if they exist for a clean redo
+DROP TABLE IF EXISTS Sales_Details;
+DROP TABLE IF EXISTS Sales;
+DROP TABLE IF EXISTS Items;
+DROP TABLE IF EXISTS Inventory;
+GO
 
 
 
@@ -162,40 +168,48 @@ BEGIN
     CREATE TABLE Sales_Details (
         sales_details_id INT IDENTITY(30000,10) PRIMARY KEY,
         sales_id INT NOT NULL, 
-        item_id INT NOT NULL,   
+        item_name INT NOT NULL,   
         item_quantity INT NOT NULL,
         price_per_item DECIMAL(10,2) NOT NULL,
         sales_subtotal DECIMAL(10,2) NOT NULL,
         sales_discount DECIMAL(10,2) DEFAULT 0,
         FOREIGN KEY (sales_id) REFERENCES Sales(sales_id),
-        FOREIGN KEY (item_id) REFERENCES Items(item_id)
+        FOREIGN KEY (item_name) REFERENCES Items(item_id)
     );
 END
 
 
 
 INSERT INTO Sales (sales_total)
-VALUES (600.00),
-       (750.12),
-       (1980.00);
+VALUES (70.00),
+       (40.00),
+       (300.00);
 
-DECLARE @SalesID1 INT = (SELECT MIN(sales_id)FROM Sales WHERE sales_total = 600.00);
-DECLARE @SalesID2 INT = (SELECT MIN(sales_id)FROM Sales WHERE sales_total = 750.12);
-DECLARE @SalesID3 INT = (SELECT MIN(sales_id)FROM Sales WHERE sales_total = 1980.00);
+DECLARE @SalesID1 INT = (SELECT MIN(sales_id)FROM Sales WHERE sales_total = 70.00);
+DECLARE @SalesID2 INT = (SELECT MIN(sales_id)FROM Sales WHERE sales_total = 40.00);
+DECLARE @SalesID3 INT = (SELECT MIN(sales_id)FROM Sales WHERE sales_total = 300.00);
 
 
-INSERT INTO Sales_Details(sales_id, item_id, item_quantity,  price_per_item, sales_subtotal, sales_discount)
+INSERT INTO Sales_Details(sales_id, item_name, item_quantity,  price_per_item, sales_subtotal, sales_discount)
     VALUES
     (@SalesID1, 1000, 2, 10.00, 20.00, 0.00),
-    (@SalesID1, 1100, 1, 50.00, 50.00, 0.00),
+    (@SalesID1, 1100, 5, 10.00, 50.00, 0.00),
 
-    (@SalesID2, 1200, 3, 20.00, 60.00, 5.00),  
-    (@SalesID2, 1300, 1, 199.00, 199.00, 0.00), 
+    (@SalesID2, 1200, 3, 10.00, 30.00, 0.00),  
+    (@SalesID2, 1300, 1, 10.00, 10.00, 0.00), 
     
-    (@SalesID3, 1400, 5, 120.00, 600.00, 10.00),
-    (@SalesID3, 1500, 2, 300.00, 600.00, 0.00);
+    (@SalesID3, 1400, 5, 20.00, 100.00, 10.00),
+    (@SalesID3, 1500, 2, 100.00, 200.00, 10.00);
 
 -- Display the Tables
 SELECT * FROM Sales;
-SELECT * FROM Sales_Details;
-
+SELECT 
+    SD.sales_details_id, 
+    SD.sales_id, 
+    I.item_name,  
+    SD.item_quantity, 
+    SD.price_per_item, 
+    SD.sales_subtotal, 
+    SD.sales_discount
+FROM Sales_Details SD
+JOIN Items I ON SD.item_name = I.item_id;  -- Join on item_id to get the product name
